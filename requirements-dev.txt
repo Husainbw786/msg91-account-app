@@ -1,0 +1,3 @@
+pytest>=7.0
+reportlab>=4.0,<4.3   # tests/make_pdf_samples.py (Python 3.9)
+fonttools>=4.40   # tests/make_pdf_samples.py (scrambled-font PDFs)

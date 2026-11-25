@@ -1,0 +1,14 @@
+# secrets: never commit
+.env
+.env.*
+# local data, caches, outputs
+data/
+data-dev/
+out/
+profiles/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.claude/
+.DS_Store
