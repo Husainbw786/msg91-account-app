@@ -177,3 +177,22 @@ def test_payments_quoting_invoice_numbers_do_not_flip_the_direction():
     C += [Entry("C", 10 + i, [10 + i], d, narration=f"Agst Ref {k}", dr=g, kind=PAYMENT, inv_key=k)
           for i, (k, g) in enumerate([("250405-11", 1180000), ("250508-12", 1327000), ("250606-13", 1450000)])]
     assert choose_orientation(W, C) == -1
+
+
+def test_wrong_direction_is_caught_by_the_double_check(tmp_path, monkeypatch):
+    # even if the direction vote is fooled, reconciling both ways keeps the reading that pairs the entries,
+    # so payments never show as "not accounted" on both sides of a ledger that actually agrees
+    import recon.match as M
+    inv = [("05-04-2025", "250405-11", 1200000), ("08-05-2025", "250508-12", 1350000),
+           ("06-06-2025", "250606-13", 1475000), ("07-07-2025", "250707-14", 1610000)]
+    wp = walkover_csv(tmp_path / "w.csv",
+                      [(d, "sales", n, "SMS services", g, 0) for d, n, g in inv] +
+                      [("20-07-2025", "receipt", f"RCPT-{i}", "NEFT", 0, g) for i, (d, n, g) in enumerate(inv)])
+    cp = counterparty_csv(tmp_path / "c.csv",
+                          [(d, "Invoice", n, "Purchase invoice", 0, g) for d, n, g in inv] +
+                          [("20-07-2025", "Payment", f"UTR{i}", "Bank payment", g, 0) for i, (d, n, g) in enumerate(inv)])
+    monkeypatch.setattr(M, "choose_orientation", lambda W, C: 1)          # a fooled vote: the wrong way round
+    W, C, res, br = run(wp, cp)
+    assert res.orient == -1 and br.residual == 0
+    assert not res.unmatched_w and not res.unmatched_c
+    assert res.notes and res.notes[0].startswith("Direction checked both ways")

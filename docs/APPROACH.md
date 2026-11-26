@@ -143,6 +143,12 @@ books and a credit in theirs. The app checks this from entries that carry one of
 If payments were counted like invoices, a ledger whose payments quote our invoice numbers would be read the wrong
 way round, and every payment would look "not accounted" on both sides. That is why payments vote inverted.
 
+**Safeguard: the direction is double-checked.** Whenever anything is left unpaired, the two ledgers are also
+reconciled the other way round. The app measures, for each direction, how much is left unpaired or matched with
+an unexplained amount difference, and keeps the direction that leaves clearly less (at most half). A wrong
+direction leaves nearly every payment and invoice unpaired, so it cannot win even if the votes above were fooled.
+When the double-check overrides the vote, the reconciliation notes say so.
+
 | Tier | Pairs when | Typical case |
 | --- | --- | --- |
 | **T1 Reference** | Same invoice number on both sides, same amount (₹1) | Counterparty quotes our invoice number |

@@ -151,9 +151,40 @@ def _promote_by_walkover_key(W: Ledger, C: Ledger, orient: int) -> None:
                 break
 
 
-def reconcile(W: Ledger, C: Ledger) -> Result:
-    orient = choose_orientation(W.entries, C.entries)
+def _open_amount(res: Result) -> int:
+    """How much a reconciliation leaves unexplained at entry level: unpaired entries on both sides plus amounts
+    that matched by number but differ for no known reason. A wrong-way-round reading leaves this huge."""
+    o = res.orient
+    total = sum(abs(e.dr - e.cr) for e in res.unmatched_w) + sum(abs(o * (e.dr - e.cr)) for e in res.unmatched_c)
+    total += sum(abs(amt) for m in res.matches for lab, amt in m.parts if lab == "Amount differs")
+    return total
 
+
+def reconcile(W: Ledger, C: Ledger) -> Result:
+    """Match the two ledgers. The direction (does the counterparty's ledger mirror ours) is first decided from
+    entries that carry Walkover's document numbers. Safeguard: if that leaves anything unpaired, the ledgers are
+    also reconciled the other way round, and the direction that leaves clearly less unexplained is kept. A wrong
+    direction leaves nearly every payment and invoice unpaired, so it can never be chosen over the right one."""
+    import copy
+    voted = choose_orientation(W.entries, C.entries)
+    first = _reconcile_with(copy.deepcopy(W), copy.deepcopy(C), voted)
+    orient, note = voted, ""
+    first_open = _open_amount(first)
+    if first_open > TOL:
+        alt = _reconcile_with(copy.deepcopy(W), copy.deepcopy(C), -voted)
+        alt_open = _open_amount(alt)
+        if alt_open < first_open - TOL and alt_open <= first_open // 2:
+            orient = -voted
+            note = (f"Direction checked both ways: reading the counterparty's ledger the other way round left "
+                    f"{first_open / 100:,.2f} unpaired or unexplained against {alt_open / 100:,.2f}; the better "
+                    f"reading was kept.")
+    res = _reconcile_with(W, C, orient)
+    if note:
+        res.notes.insert(0, note)
+    return res
+
+
+def _reconcile_with(W: Ledger, C: Ledger, orient: int) -> Result:
     def vc(e: Entry) -> int:
         return orient * (e.dr - e.cr)
 
