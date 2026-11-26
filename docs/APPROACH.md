@@ -131,6 +131,18 @@ First, the **direction** (which side is debit for the other) and the **TDS basis
 invoices net or gross of TDS) are decided from the data. Then entries are paired in tiers. Each entry can be
 used once; a tier works only on what earlier tiers left.
 
+**How the direction is decided.** Normally the counterparty's ledger mirrors ours: our invoice is a debit in our
+books and a credit in theirs. The app checks this from entries that carry one of Walkover's invoice numbers:
+
+- a counterparty **invoice / credit note / debit note** with our number votes that it moves the same way as our
+  document (after mirroring);
+- a counterparty **payment** that quotes our invoice number ("Agst Ref 250606-125") settles that invoice, so it
+  moves the **opposite** way, and votes accordingly;
+- TDS entries and journals do not vote. With no votes, the normal mirror is used.
+
+If payments were counted like invoices, a ledger whose payments quote our invoice numbers would be read the wrong
+way round, and every payment would look "not accounted" on both sides. That is why payments vote inverted.
+
 | Tier | Pairs when | Typical case |
 | --- | --- | --- |
 | **T1 Reference** | Same invoice number on both sides, same amount (₹1) | Counterparty quotes our invoice number |

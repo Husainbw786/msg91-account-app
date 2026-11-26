@@ -91,15 +91,25 @@ def _tds_pattern(gross: int, diff: int) -> Optional[str]:
 
 
 def choose_orientation(W: list[Entry], C: list[Entry]) -> int:
-    """+1 or -1: the sign that makes key-matched documents agree in direction."""
+    """+1 or -1: the sign that makes key-matched documents agree in direction.
+
+    Only Walkover's documents (invoice, credit/debit note) set the reference direction. On the counterparty's
+    side a document with the same number votes for the same direction; a payment or receipt that quotes the
+    invoice it settles ("Agst Ref 250606-125") moves the opposite way to that invoice, so it votes inverted.
+    Other entries (TDS, journals) do not vote."""
+    docs = (INVOICE, CN, DN)
     wk = defaultdict(int)
     for e in W:
-        if e.inv_key:
+        if e.inv_key and e.kind in docs:
             wk[e.inv_key] += vw(e)
     votes = 0
     for e in C:
         if e.inv_key in wk and wk[e.inv_key] and vw(e):
-            votes += 1 if (wk[e.inv_key] > 0) == (vw(e) > 0) else -1
+            same = (wk[e.inv_key] > 0) == (vw(e) > 0)
+            if e.kind in docs:
+                votes += 1 if same else -1
+            elif e.kind in (PAYMENT, REFUND):
+                votes += -1 if same else 1
     if votes == 0:
         # fall back on totals of payments / invoices
         return -1

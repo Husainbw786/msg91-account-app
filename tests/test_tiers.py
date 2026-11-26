@@ -159,3 +159,21 @@ def test_t6_needs_a_consistent_pattern(tmp_path):
     W, C, res, br = run(wp, cp)
     assert not any(m.tier.startswith("T6") for m in res.matches)
     assert any(l.category == "not accounted" for l in br.lines)
+
+
+def test_payments_quoting_invoice_numbers_do_not_flip_the_direction():
+    # As an AI reading gives it: the counterparty books our invoices under its own numbers (credit side), and
+    # its payments carry our invoice number ("Agst Ref 250405-11", debit side). A payment moves the opposite way
+    # to the invoice it settles, so it must vote for the mirrored direction, not the same one.
+    import datetime as dt
+    from recon.classify import INVOICE, PAYMENT
+    from recon.match import choose_orientation
+    from recon.rows import Entry
+    d = dt.date(2025, 5, 1)
+    W = [Entry("W", i, [i], d, ref=k, dr=g, kind=INVOICE, inv_key=k)
+         for i, (k, g) in enumerate([("250405-11", 1200000), ("250508-12", 1350000), ("250606-13", 1475000)])]
+    C = [Entry("C", i, [i], d, ref=f"PB/{i}", cr=g, kind=INVOICE, inv_key=f"PB-{i}")
+         for i, g in enumerate([1180000, 1327000, 1450000])]
+    C += [Entry("C", 10 + i, [10 + i], d, narration=f"Agst Ref {k}", dr=g, kind=PAYMENT, inv_key=k)
+          for i, (k, g) in enumerate([("250405-11", 1180000), ("250508-12", 1327000), ("250606-13", 1450000)])]
+    assert choose_orientation(W, C) == -1
