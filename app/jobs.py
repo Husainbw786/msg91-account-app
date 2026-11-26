@@ -79,7 +79,8 @@ def reconcile_run(run_id: str) -> None:
             store = _load_profiles()
             out = reconcile_ledgers(W, C, run["counterparty"], store)
             _save_profiles(store)
-        result = result_json(out.res, out.bridge, out.tds, run["counterparty"])
+        result = result_json(out.res, out.bridge, out.tds, run["counterparty"], run.get("w_filename"),
+                             run.get("c_filename"))
         runs.put_part(run_id, "result", result)
         runs.update(run_id, status="done", error=None, has_result=True, has_report=True,
                     residual=result["bridge"]["residual"], c_closing=result["bridge"]["c_closing"],
@@ -97,5 +98,6 @@ def build_report(run: dict) -> bytes:
         raise FileNotFoundError("the extracted ledgers are no longer stored")
     out = reconcile_ledgers(ledger_from_dict(wd), ledger_from_dict(cd), run["counterparty"])
     path = runs.scratch_path(run["id"], "report.xlsx")
-    write_report(out.res, out.bridge, str(path), "Walkover", run["counterparty"], out.tds)
+    write_report(out.res, out.bridge, str(path), "Walkover", run["counterparty"], out.tds,
+                 w_file=run.get("w_filename"), c_file=run.get("c_filename"))
     return path.read_bytes()

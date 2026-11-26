@@ -215,11 +215,12 @@ problem, never to a silent reconciliation error.
 - **Otherwise**: closing balances, the bridge, TDS by year, and tabs for matched, unmatched and chains.
 
 **Where to find every difference** (`recon/details.py`): every bridge line carries the entries behind it, each
-described so it can be found without searching: which ledger, the sheet and row number in the uploaded file,
-the date, the voucher / invoice number (on the counterparty's side also their own voucher number), the amount
-and a short narration. Matched pairs show both sides ("Walkover row 297 · 250409-114 ↔ Ixigo row 66 ·
-250409-114"). On screen the open items list their entries under each line, and every line of the full bridge
-opens to show its entries.
+described so it can be found without searching: the **uploaded file's own name**, its **tab** and the **row**
+number (for a PDF, the line of the statement), then the date, the voucher / invoice number (on the counterparty's
+side also their own voucher number), the amount and a short narration. For example:
+`Walkover ledger (1).xlsx › tab "Ledger" › rows 126-127 · 04-Dec-23 · CR-231204-1`. Matched pairs show both
+files, joined by ↔. On screen the open items list their entries under each line, and every line of the full
+bridge opens to show its entries.
 
 ### 3.8 The Excel report (`recon/report.py`)
 

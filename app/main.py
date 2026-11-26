@@ -186,7 +186,8 @@ def _get(run_id: str) -> dict:
 
 
 def _safe_name(name: str) -> str:
-    base = re.sub(r"[^A-Za-z0-9._ -]+", "_", Path(name or "file").name)[:120]
+    # shown to people as the file's name (never used as a path): keep it as on their computer, brackets included
+    base = re.sub(r"[^A-Za-z0-9._ ()\[\]&,+'-]+", "_", Path(name or "file").name)[:160]
     return base or "file"
 
 

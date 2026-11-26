@@ -50,7 +50,8 @@ def _refs(es: list[Entry]) -> str:
 
 
 def write_report(res: Result, br: Bridge, path: str, w_name: str = "Walkover", c_name: str = "Counterparty",
-                 tds=None, ai=None) -> None:
+                 tds=None, ai=None, w_file: str | None = None, c_file: str | None = None) -> None:
+    """w_file / c_file: the ledgers' file names as uploaded, used wherever the report says where to look."""
     wb = Workbook()
     W, C = res.W, res.C
 
@@ -68,15 +69,17 @@ def write_report(res: Result, br: Bridge, path: str, w_name: str = "Walkover", c
     ws.column_dimensions["D"].width = 10
     ws.column_dimensions["E"].width = 14
     r = 4
-    for lab, led in ((w_name, W), (c_name, C)):
-        ws.cell(r, 2, f"{lab}: {led.path.split('/')[-1]} / sheet '{led.sheet}' - {len(led.entries)} entries, "
+    for lab, led, fname in ((w_name, W, w_file), (c_name, C, c_file)):
+        fname = fname or led.path.split('/')[-1]
+        tab = "" if fname.lower().endswith(".pdf") else f" / tab '{led.sheet}'"
+        ws.cell(r, 2, f"{lab}: {fname}{tab} - {len(led.entries)} entries, "
                       f"{led.first_date} to {led.last_date}").font = BASE
         c = ws.cell(r, 3, led.confidence.upper())
         c.font = BOLD
         c.fill = PatternFill("solid", fgColor=CONF_FILL[led.confidence])
         r += 1
     r += 1
-    details = bridge_details(br, res, w_name, c_name)
+    details = bridge_details(br, res, w_name, c_name, w_file, c_file)
     _header(ws, r, ["#", "Bridge", "Amount", "Items", "Category", "Where to find it"], [6, 78, 18, 10, 14, 90])
     ws.freeze_panes = None
     r += 1
@@ -153,7 +156,7 @@ def write_report(res: Result, br: Bridge, path: str, w_name: str = "Walkover", c
 
     # ------------------------------------------------------------------ Bridge details: every entry behind every line
     bd = wb.create_sheet("Bridge details", 1)
-    _header(bd, 1, ["#", "Bridge line", "Ledger", "Where to find it (sheet, row, date, number)", "Date", "Voucher / invoice no.",
+    _header(bd, 1, ["#", "Bridge line", "Whose ledger", "Where to find it (file, tab, row, date, number)", "Date", "Voucher / invoice no.",
                     "Matched with", "Type", "Amount", "Narration / note"], [5, 48, 14, 70, 11, 20, 20, 12, 16, 60])
     r = 2
     for i, (bl, det) in enumerate(zip(br.lines, details), 2):

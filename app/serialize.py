@@ -71,7 +71,8 @@ def _col_letter(c: int) -> str:
     return s
 
 
-def result_json(res: Result, br: Bridge, tds: TdsReport, c_name: str = "Counterparty") -> dict:
+def result_json(res: Result, br: Bridge, tds: TdsReport, c_name: str = "Counterparty", w_file: str | None = None,
+                c_file: str | None = None) -> dict:
     W, C, o = res.W, res.C, res.orient
 
     def vc(e):
@@ -104,7 +105,7 @@ def result_json(res: Result, br: Bridge, tds: TdsReport, c_name: str = "Counterp
             "lines": [{"label": b.label, "amount": rs(b.amount), "count": b.count, "category": b.category,
                        "where": line_summary(det),
                        "details": [{**d, "amount": rs(d["amount"])} for d in det[:300]]}
-                      for b, det in zip(br.lines, bridge_details(br, res, "Walkover", c_name))],
+                      for b, det in zip(br.lines, bridge_details(br, res, "Walkover", c_name, w_file, c_file))],
         },
         "tiers": dict(Counter(m.tier for m in res.matches)),
         "matches": matches, "unmatched": unmatched,
