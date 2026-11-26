@@ -79,7 +79,7 @@ def reconcile_run(run_id: str) -> None:
             store = _load_profiles()
             out = reconcile_ledgers(W, C, run["counterparty"], store)
             _save_profiles(store)
-        result = result_json(out.res, out.bridge, out.tds)
+        result = result_json(out.res, out.bridge, out.tds, run["counterparty"])
         runs.put_part(run_id, "result", result)
         runs.update(run_id, status="done", error=None, has_result=True, has_report=True,
                     residual=result["bridge"]["residual"], c_closing=result["bridge"]["c_closing"],

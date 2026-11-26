@@ -214,10 +214,18 @@ problem, never to a silent reconciliation error.
   not accounted by one side, it is listed inside the box under **"Open reconciling items"**; it is never hidden.
 - **Otherwise**: closing balances, the bridge, TDS by year, and tabs for matched, unmatched and chains.
 
+**Where to find every difference** (`recon/details.py`): every bridge line carries the entries behind it, each
+described so it can be found without searching: which ledger, the sheet and row number in the uploaded file,
+the date, the voucher / invoice number (on the counterparty's side also their own voucher number), the amount
+and a short narration. Matched pairs show both sides ("Walkover row 297 · 250409-114 ↔ Ixigo row 66 ·
+250409-114"). On screen the open items list their entries under each line, and every line of the full bridge
+opens to show its entries.
+
 ### 3.8 The Excel report (`recon/report.py`)
 
 Rebuilt from the saved extractions on every download (never stored, always consistent with the current logic):
-summary bridge with live formulas, TDS by year, matches (with tier and explanation), unmatched entries, parse
+summary bridge with live formulas and a "Where to find it" column, a **Bridge details** sheet listing every entry
+behind every bridge line, TDS by year, matches (with tier and explanation), unmatched entries, parse
 report, and both ledgers' normalised entries.
 
 ---

@@ -7,6 +7,7 @@ from openpyxl.utils import get_column_letter as L
 from openpyxl.workbook.properties import CalcProperties
 
 from .bridge import Bridge
+from .details import bridge_details, line_summary
 from .match import Result, vw
 from .parser import Ledger
 from .rows import Entry
@@ -75,7 +76,8 @@ def write_report(res: Result, br: Bridge, path: str, w_name: str = "Walkover", c
         c.fill = PatternFill("solid", fgColor=CONF_FILL[led.confidence])
         r += 1
     r += 1
-    _header(ws, r, ["#", "Bridge", "Amount", "Items", "Category"], [6, 78, 18, 10, 14])
+    details = bridge_details(br, res, w_name, c_name)
+    _header(ws, r, ["#", "Bridge", "Amount", "Items", "Category", "Where to find it"], [6, 78, 18, 10, 14, 90])
     ws.freeze_panes = None
     r += 1
     start = r
@@ -91,6 +93,7 @@ def write_report(res: Result, br: Bridge, path: str, w_name: str = "Walkover", c
         ws.cell(r, 3, rs(bl.amount)).font = Font(name=F, color="0000FF")
         ws.cell(r, 4, bl.count)
         ws.cell(r, 5, bl.category)
+        ws.cell(r, 6, line_summary(details[i - 2]))
         r += 1
     last_line = r - 1
     ws.cell(r, 2, f"Derived closing balance of {c_name} (in Walkover's direction)").font = BOLD
@@ -146,6 +149,30 @@ def write_report(res: Result, br: Bridge, path: str, w_name: str = "Walkover", c
     _fmt(ws, start, r, (3,))
     for rr in range(start, r):
         ws.cell(rr, 2).alignment = Alignment(wrap_text=True, vertical="top")
+        ws.cell(rr, 6).alignment = Alignment(wrap_text=True, vertical="top")
+
+    # ------------------------------------------------------------------ Bridge details: every entry behind every line
+    bd = wb.create_sheet("Bridge details", 1)
+    _header(bd, 1, ["#", "Bridge line", "Ledger", "Where to find it (sheet, row, date, number)", "Date", "Voucher / invoice no.",
+                    "Matched with", "Type", "Amount", "Narration / note"], [5, 48, 14, 70, 11, 20, 20, 12, 16, 60])
+    r = 2
+    for i, (bl, det) in enumerate(zip(br.lines, details), 2):
+        for d in det:
+            bd.cell(r, 1, i)
+            bd.cell(r, 2, bl.label)
+            bd.cell(r, 3, d["ledger"])
+            bd.cell(r, 4, d["where"])
+            bd.cell(r, 5, d["date"])
+            bd.cell(r, 6, d["ref"])
+            bd.cell(r, 7, d["with"])
+            bd.cell(r, 8, d["kind"])
+            bd.cell(r, 9, rs(d["amount"]))
+            bd.cell(r, 10, d["narration"])
+            r += 1
+    _fmt(bd, 2, r, (9,))
+    for rr in range(2, r):
+        for c in (2, 4, 10):
+            bd.cell(rr, c).alignment = Alignment(wrap_text=True, vertical="top")
 
     # ------------------------------------------------------------------ Matches
     ms = wb.create_sheet("Matches")

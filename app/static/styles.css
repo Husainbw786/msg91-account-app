@@ -80,3 +80,6 @@ select.role.changed { border-color: var(--accent); background: #eef3ff; }
 .feature:hover { text-decoration: none; border-color: var(--accent); }
 .feature .small { color: var(--muted); }
 .feature.active { border: 2px solid var(--accent); background: #eef3ff; }
+
+ul.where { margin: 4px 0 0 0; padding: 0 0 0 16px; font-size: 12px; }
+ul.where li { margin: 2px 0; white-space: normal; }

@@ -196,3 +196,18 @@ def test_wrong_direction_is_caught_by_the_double_check(tmp_path, monkeypatch):
     assert res.orient == -1 and br.residual == 0
     assert not res.unmatched_w and not res.unmatched_c
     assert res.notes and res.notes[0].startswith("Direction checked both ways")
+
+
+def test_every_open_item_says_where_to_find_it(tmp_path):
+    # an invoice only Walkover has: its bridge line must name the ledger, the row in the file, the date and number
+    from recon.details import bridge_details, line_summary
+    wp = walkover_csv(tmp_path / "w.csv", [("01-05-2024", "sales", "240501-1", "SMS credits", 100000, 0),
+                                          ("02-05-2024", "sales", "240502-7", "WhatsApp credits", 59000, 0)])
+    cp = counterparty_csv(tmp_path / "c.csv", [("02-05-2024", "Invoice", "240501-1", "SMS credits", 0, 100000)])
+    W, C, res, br = run(wp, cp)
+    det = dict(zip((l.label for l in br.lines), bridge_details(br, res, "Walkover", "Acme")))
+    open_line = [l for l in br.lines if l.category == "not accounted"][0]
+    d = det[open_line.label][0]
+    assert d["ledger"] == "Walkover" and d["ref"] == "240502-7" and d["date"] == "02-May-24"
+    assert "row 3" in d["where"] and d["amount"] == -5900000 == open_line.amount
+    assert line_summary(det[open_line.label]) == d["where"]

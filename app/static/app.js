@@ -349,10 +349,10 @@ function resultsView(run) {
     <div class="tile ${ok ? "ok" : "bad"}"><div class="k">Unexplained difference</div><div class="v">${money(B.residual)}</div></div>
   </div>
   <div class="panel"><h2>Bridge</h2>
-    <p class="muted small">Every difference sits in a named line. + means the counterparty owes Walkover more.</p>
+    <p class="muted small">Every difference sits in a named line. + means the counterparty owes Walkover more. Click a line to see the entries behind it and where to find them.</p>
     <table><thead><tr><th>Line</th><th class="num">Items</th><th class="num">Amount</th></tr></thead><tbody>
       <tr><td><strong>Walkover closing balance</strong></td><td></td><td class="num">${money(B.w_closing)}</td></tr>
-      ${B.lines.map(l => `<tr><td>${esc(l.label)} <span class="chip">${esc(l.category)}</span></td><td class="num">${l.count}</td><td class="num">${money(l.amount)}</td></tr>`).join("")}
+      ${B.lines.map(l => `<tr><td class="wrap">${l.details && l.details.length && l.category !== "rounding" ? `<details><summary style="color:inherit">${esc(l.label)} <span class="chip">${esc(l.category)}</span></summary>${entryList(l.details, 25)}</details>` : `${esc(l.label)} <span class="chip">${esc(l.category)}</span>`}</td><td class="num">${l.count}</td><td class="num">${money(l.amount)}</td></tr>`).join("")}
       <tr class="total"><td>Derived ${cp} closing</td><td></td><td class="num">${money(B.derived)}</td></tr>
       <tr><td>${cp} closing per its ledger</td><td></td><td class="num">${money(B.c_closing)}</td></tr>
       <tr class="total"><td>Unexplained</td><td></td><td class="num">${money(B.residual)}</td></tr>
@@ -381,7 +381,16 @@ function openItems(B) {
   const open = B.lines.filter(l => l.category === "not accounted" || l.category === "timing");
   if (!open.length) return "";
   return `<div class="info small" style="margin-top:14px;text-align:left"><strong>Open reconciling items</strong> (explained, still to be accounted):
-    <ul style="margin:6px 0 0 18px;padding:0">${open.map(l => `<li>${esc(l.label)}: ${l.count} item${l.count === 1 ? "" : "s"}, ${money(l.amount)}</li>`).join("")}</ul></div>`;
+    <ul style="margin:6px 0 0 18px;padding:0">${open.map(l => `<li style="margin-bottom:6px">${esc(l.label)}: ${l.count} item${l.count === 1 ? "" : "s"}, ${money(l.amount)}
+      ${entryList(l.details, 10)}</li>`).join("")}</ul></div>`;
+}
+
+// The entries behind a bridge line, each with where to find it: ledger, sheet and row, date, number, amount.
+function entryList(details, max) {
+  if (!details || !details.length) return "";
+  const shown = details.slice(0, max);
+  return `<ul class="where">${shown.map(d => `<li>${esc(d.where)}${d.amount !== null && d.amount !== undefined ? ` · <strong>${money(d.amount)}</strong>` : ""}${d.narration ? `<span class="muted"> · ${esc(d.narration)}</span>` : ""}</li>`).join("")}
+    ${details.length > max ? `<li class="muted">and ${details.length - max} more: see the "Bridge details" sheet in the Excel report</li>` : ""}</ul>`;
 }
 
 function aiPanel(A) {

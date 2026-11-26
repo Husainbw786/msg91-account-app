@@ -5,6 +5,7 @@ from collections import Counter
 
 from recon.bridge import Bridge, _c_bucket, _w_bucket
 from recon.detect import ALL_ROLES
+from recon.details import bridge_details, line_summary
 from recon.match import Result, vw
 from recon.parser import Ledger
 from recon.rows import Entry
@@ -70,7 +71,7 @@ def _col_letter(c: int) -> str:
     return s
 
 
-def result_json(res: Result, br: Bridge, tds: TdsReport) -> dict:
+def result_json(res: Result, br: Bridge, tds: TdsReport, c_name: str = "Counterparty") -> dict:
     W, C, o = res.W, res.C, res.orient
 
     def vc(e):
@@ -100,8 +101,10 @@ def result_json(res: Result, br: Bridge, tds: TdsReport) -> dict:
         "bridge": {
             "w_closing": rs(br.w_closing), "c_closing": rs(br.c_closing_w), "derived": rs(br.derived),
             "residual": rs(br.residual), "w_printed": rs(br.w_closing_printed), "c_printed": rs(br.c_closing_printed_w),
-            "lines": [{"label": b.label, "amount": rs(b.amount), "count": b.count, "category": b.category}
-                      for b in br.lines],
+            "lines": [{"label": b.label, "amount": rs(b.amount), "count": b.count, "category": b.category,
+                       "where": line_summary(det),
+                       "details": [{**d, "amount": rs(d["amount"])} for d in det[:300]]}
+                      for b, det in zip(br.lines, bridge_details(br, res, "Walkover", c_name))],
         },
         "tiers": dict(Counter(m.tier for m in res.matches)),
         "matches": matches, "unmatched": unmatched,
